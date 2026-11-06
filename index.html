@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Listing Health Prototype</title>
-<meta name="description" content="Clickable prototype of the AutoMarketPro dealer listing flow: VIN auto-fill, photo guide, AI description and underperformer alerts. Illustrative data only.">
+<title>Weekly Car Check</title>
+<meta name="description" content="Clickable prototype of the AutoMarketPro weekly car check: fix what the data can't know after publishing. Illustrative data only.">
 <style>
 :root{
   --bg:#eef1f5; --phone:#ffffff; --ink:#111827; --ink2:#4b5563; --ink3:#9ca3af;
@@ -195,21 +195,46 @@ h3{font-size:15px;margin:18px 0 8px}
 .note{font-size:12px;border-left:3px solid var(--ai);padding:6px 10px;background:var(--ai-soft);border-radius:0 10px 10px 0;color:var(--ink2);margin-top:10px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 </style>
+<style>
+.seg{display:flex;background:var(--soft);border-radius:12px;padding:3px;gap:3px;margin:6px 0 4px}
+.seg button{flex:1;height:34px;border-radius:9px;font-size:13px;font-weight:600;color:var(--ink2)}
+.seg button.on{background:var(--phone);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tick{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;width:100%;text-align:left;margin-bottom:8px}
+.tick .bx{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;font-weight:800;flex:none;color:#fff}
+.tick.on{border-color:var(--ok);background:var(--ok-soft)}
+.tick.on .bx{background:var(--ok);border-color:var(--ok)}
+.tick .val{margin-left:auto;font-size:12px;color:var(--ink3)}
+.bands{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin:10px 0 2px}
+.bands span{height:8px;border-radius:4px;background:var(--line)}
+.bands span.on{outline:2px solid var(--ink);outline-offset:1px}
+.bandlbl{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;font-size:10px;color:var(--ink3);text-align:center}
+.bandnow{font-size:20px;font-weight:800;margin-top:4px;transition:color .3s}
+.sumcard{background:linear-gradient(135deg,var(--brand),#4f46e5);color:#fff;border-radius:20px;padding:16px 18px;margin-bottom:14px}
+.sumcard .k{display:flex;gap:18px;margin-top:10px}
+.sumcard .k b{display:block;font-size:22px;line-height:1.1}
+.sumcard .k span{font-size:11px;opacity:.85}
+.meta{font-size:12px;color:var(--ink3);margin-bottom:2px}
+.src{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--soft);color:var(--ink2);margin-left:4px;vertical-align:1px}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qa{border-top:1px solid var(--line);padding:10px 0}
+.qa:first-of-type{border-top:0}
+.qa .q{font-weight:700;font-size:14px}
+.qa .n{font-size:12px;color:var(--ink3)}
+</style>
 </head>
 <body>
 <div class="stage">
   <aside class="side">
     <span class="tag">Prototype · illustrative data</span>
-    <h1>AutoMarketPro Dealer App: listing health</h1>
-    <p>A clickable prototype of the first bet in the case study: fix listings <b>at the moment of listing</b>, then flag the cars that need attention.</p>
+    <h1>AutoMarketPro Dealer App: weekly car check</h1>
+    <p>Creating a listing is already automated (VIN decoding, AI text, DMS feeds). This prototype covers what the data can't know, <b>after publishing</b>, for every listing channel.</p>
     <ol>
-      <li>Enter the VIN, specs fill themselves</li>
-      <li>Photo guide: 15 angles, a check shows what's missing</li>
-      <li>AI description from specs and photos; the dealer edits and confirms</li>
-      <li>Publish at the quality bar</li>
-      <li>Weekly: 3 cars need attention, with one-click fixes</li>
+      <li><b>Weekly car check:</b> at most 3 cars, sorted by price × days online, each with the one gap that matters</li>
+      <li><b>What the rating can't see:</b> warranty, condition, extras added in one tap, comparison radius set by the dealer, rating explained with the comparison cars</li>
+      <li><b>Answer once:</b> questions buyers keep asking, answered in the listing</li>
+      <li><b>Missing photos:</b> guided shots for exactly what's missing</li>
     </ol>
-    <p class="tiny">Principles: specs only from VIN data, AI writes text but never invents facts, few alerts, each with a reason and a one-click fix, every automatic change can be undone.</p>
+    <p class="tiny">Principles: no price-cut recommendations, the dealer's price is the dealer's margin. Condition comes from the dealer, shown as a dealer statement. Every change can be undone.</p>
     <p class="links"><button id="sideReset">Restart demo</button><button id="sideTheme">Toggle dark mode</button></p>
   </aside>
 
@@ -226,47 +251,52 @@ h3{font-size:15px;margin:18px 0 8px}
 
 /* ---------- data ---------- */
 const ANGLES = [
-  {id:"f34l", name:"Front ¾ left", short:"Front ¾", req:true, kind:"ext", view:"f34", tip:"Your cover photo. Step back about 3 m, crouch to headlight height, show the front and left side."},
-  {id:"front", name:"Front", req:true, kind:"ext", view:"front", tip:"Straight on, centre the badge. Keep the whole car in the frame."},
-  {id:"f34r", name:"Front ¾ right", req:false, kind:"ext", view:"f34", flip:true, tip:"Same distance as the cover photo, from the right."},
+  {id:"f34l", name:"Front ¾ left", req:true, kind:"ext", view:"f34", tip:"Your cover photo. Step back about 3 m, crouch to headlight height."},
+  {id:"front", name:"Front", req:true, kind:"ext", view:"front", tip:"Straight on, centre the badge."},
   {id:"left", name:"Side left", req:true, kind:"ext", view:"side", tip:"Stand at the middle of the car. Wheels fully visible."},
   {id:"right", name:"Side right", req:false, kind:"ext", view:"side", flip:true, tip:"Stand at the middle of the car. Wheels fully visible."},
-  {id:"r34l", name:"Rear ¾ left", req:false, kind:"ext", view:"r34", tip:"Show the rear and left side."},
-  {id:"rear", name:"Rear", req:true, kind:"ext", view:"rear", tip:"Straight on. Plate area will be blurred automatically."},
-  {id:"r34r", name:"Rear ¾ right", req:false, kind:"ext", view:"r34", flip:true, tip:"Show the rear and right side."},
-  {id:"dash", name:"Dashboard", req:true, kind:"int", view:"dash", tip:"From the back seat, between the front seats. Ignition on, so displays are lit."},
-  {id:"fseats", name:"Front seats", req:true, kind:"int", view:"seat", tip:"Open the driver's door, shoot from outside at seat height."},
+  {id:"rear", name:"Rear", req:true, kind:"ext", view:"rear", tip:"Straight on. Plate area is blurred automatically."},
+  {id:"dash", name:"Dashboard", req:true, kind:"int", view:"dash", tip:"From the back seat, between the front seats. Ignition on."},
+  {id:"fseats", name:"Front seats", req:true, kind:"int", view:"seat", tip:"Open the driver's door, shoot from outside at seat height. Buyers check wear here."},
   {id:"rseats", name:"Rear seats", req:false, kind:"int", view:"seat", tip:"Open the rear door, shoot across the bench."},
   {id:"trunk", name:"Boot", req:true, kind:"int", view:"trunk", tip:"Boot open, empty, from slightly above."},
-  {id:"wheel", name:"Wheel & tyre", req:false, kind:"det", view:"wheel", tip:"Crouch, fill the frame with one wheel. Tread visible if possible."},
-  {id:"odo", name:"Odometer", req:true, kind:"det", view:"odo", tip:"Ignition on, mileage readable. We check it against the mileage you entered."},
-  {id:"engine", name:"Engine bay", req:false, kind:"det", view:"engine", tip:"Bonnet open, from the front, in daylight."}
+  {id:"wheel", name:"Wheel & tyre", req:false, kind:"det", view:"wheel", tip:"Fill the frame with one wheel. Tread visible."},
+  {id:"odo", name:"Odometer", req:true, kind:"det", view:"odo", tip:"Ignition on, mileage readable."},
+  {id:"engine", name:"Engine bay", req:false, kind:"det", view:"engine", tip:"Bonnet open, in daylight."}
 ];
-const REQ_COUNT = ANGLES.filter(a=>a.req).length; // 9
-const QUALITY_BAR = 80;
+const BANDS = ["Very good","Good","Fair","Increased","High"];
+const BAND_COL = ["var(--ok)","var(--ok)","var(--brand)","var(--warn)","var(--bad)"];
 
-const WMI = {
-  WVW:{make:"Volkswagen", models:[{model:"Golf", trim:"Life 1.5 eTSI", engine:"1.5 eTSI, 4 cyl.", fuel:"Petrol (mild hybrid)", power:"110 kW / 150 hp", gearbox:"7-speed DSG", body:"Hatchback, 5 doors", co2:"128 g/km"}]},
-  WBA:{make:"BMW", models:[{model:"320d", trim:"Touring Sport Line", engine:"2.0 diesel, 4 cyl.", fuel:"Diesel", power:"140 kW / 190 hp", gearbox:"8-speed automatic", body:"Estate, 5 doors", co2:"124 g/km"}]},
-  TMB:{make:"Škoda", models:[{model:"Octavia Combi", trim:"Style 2.0 TDI", engine:"2.0 TDI, 4 cyl.", fuel:"Diesel", power:"110 kW / 150 hp", gearbox:"7-speed DSG", body:"Estate, 5 doors", co2:"119 g/km"}]},
-  WDD:{make:"Mercedes-Benz", models:[{model:"A 200", trim:"Progressive", engine:"1.3 petrol, 4 cyl.", fuel:"Petrol", power:"120 kW / 163 hp", gearbox:"7G-DCT", body:"Hatchback, 5 doors", co2:"136 g/km"}]},
-  VF1:{make:"Renault", models:[{model:"Clio", trim:"Techno TCe 90", engine:"1.0 TCe, 3 cyl.", fuel:"Petrol", power:"67 kW / 91 hp", gearbox:"6-speed manual", body:"Hatchback, 5 doors", co2:"118 g/km"}]},
-  WAU:{make:"Audi", models:[{model:"A4 Avant", trim:"35 TDI advanced", engine:"2.0 TDI, 4 cyl.", fuel:"Diesel", power:"120 kW / 163 hp", gearbox:"7-speed S tronic", body:"Estate, 5 doors", co2:"127 g/km"}]}
-};
-const YEAR = {L:2020,M:2021,N:2022,P:2023,R:2024,S:2025,K:2019,J:2018,H:2017};
-const COLORS = ["Moonstone grey metallic","Deep black pearl","Pure white","Atlantic blue metallic","Kings red metallic"];
-const DEMO_VINS = ["WVWZZZCDZMW123456","TMBJR7NX5LY045812","WBA8E5109KB712934"];
+// BMW comparison cars: price, distance km, dealer warranty
+const BMW_COMPS = [
+  {t:"520d Touring 2019, 104,000 km", p:24900, km:640, w:false},
+  {t:"520d Touring 2019, 96,000 km",  p:25400, km:480, w:false},
+  {t:"520d Touring 2018, 99,000 km",  p:24600, km:530, w:false},
+  {t:"520d Touring 2019, 91,000 km",  p:26400, km:120, w:true},
+  {t:"520d Touring 2019, 108,000 km", p:25900, km:85,  w:true},
+  {t:"520d Touring 2020, 102,000 km", p:27200, km:160, w:true},
+  {t:"520d Touring 2019, 95,000 km",  p:26800, km:40,  w:true},
+  {t:"520d Touring 2019, 112,000 km", p:24800, km:190, w:false},
+  {t:"520d Touring 2018, 98,000 km",  p:25600, km:70,  w:true}
+];
+const BMW_PRICE = 27900;
+const BMW_DETAILS = [
+  {id:"warranty", label:"Dealer warranty, 12 months", val:600},
+  {id:"tyres", label:"New tyres (2026)", val:500},
+  {id:"service", label:"Full BMW service history", val:500},
+  {id:"smoke", label:"Non-smoker, no pets", val:300},
+  {id:"owner", label:"1 previous owner", val:300},
+  {id:"hitch", label:"Tow bar, fitted later", val:400}
+];
 
-const NOW_YEAR = 2026;
-
-/* ---------- state ---------- */
 const S0 = () => ({
-  view:"home", vin:"", car:null, mileage:"", price:"", photos:{}, flagged:{}, desc:"", descConfirmed:false, tone:"balanced",
-  generated:false, published:false, alerts:[
-    {id:"golf", title:"VW Golf 2019", why:"50% fewer leads than similar cars. 6 photos, interior missing.", action:"Add photos with the guide", fixed:false, img:"golf"},
-    {id:"bmw", title:"BMW 320d 2018", why:"Priced €900 above 7 comparable cars.", action:"See the comparables", fixed:false, img:"bmw"},
-    {id:"clio", title:"Renault Clio 2020", why:"Description has 2 lines. Similar cars with full descriptions get more contacts.", action:"Draft a description", fixed:false, img:"clio"}
-  ], photoCount:0, alertMode:null, priceOld:null
+  view:"home", photos:{}, flagged:{}, photoCount:0, alertMode:null,
+  bmw:{ticks:{}, radius:"de"}, skoda:{a:{}},
+  alerts:[
+    {id:"skoda", title:"Škoda Octavia Combi 2020", price:19400, days:63, src:"mobile.de", why:"6 of 9 inquiries asked the same things: accident-free? timing belt? service book?", action:"Answer once in the listing", fixed:false, img:"skoda"},
+    {id:"bmw", title:"BMW 520d Touring 2019", price:BMW_PRICE, days:41, src:"DMS", why:"Rated ‘Increased price’, 55% fewer contacts than similar cars. Our rating can't see what makes it worth more.", action:"Add what the rating can't see", fixed:false, img:"bmw"},
+    {id:"golf", title:"VW Golf 2019", price:16900, days:52, src:"mobile.de", why:"50% fewer contacts than similar cars. 6 photos, no interior: buyers can't judge the condition.", action:"Add the missing photos", fixed:false, img:"golf"}
+  ]
 });
 let S = S0();
 
@@ -275,29 +305,10 @@ const $ = (s,el=document)=>el.querySelector(s);
 const app = $("#app");
 const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmtEUR = n => "€" + Math.round(n).toLocaleString("en-GB");
-const fmtKM = n => Math.round(n).toLocaleString("en-GB") + " km";
 function hashStr(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+const sorted = () => S.alerts.slice().sort((a,b)=>b.price*b.days - a.price*a.days);
 
-function validVin(v){
-  if(v.length!==17) return "A VIN has 17 characters ("+v.length+" so far).";
-  if(/[IOQ]/.test(v)) return "VINs never contain I, O or Q. Check for 1 and 0.";
-  if(!/^[A-HJ-NPR-Z0-9]{17}$/.test(v)) return "Only letters and digits.";
-  return null;
-}
-function decodeVin(v){
-  const w = WMI[v.slice(0,3)];
-  const h = hashStr(v);
-  const yr = YEAR[v[9]] || 2020;
-  if(!w) return {unknown:true};
-  const m = w.models[0];
-  const age = Math.max(1, NOW_YEAR - yr);
-  const base = {Volkswagen:27000,BMW:42000,"Škoda":33000,"Mercedes-Benz":36000,Renault:19000,Audi:44000}[w.make]||28000;
-  const est = Math.round(base*Math.pow(.86,age)/100)*100;
-  return {make:w.make, ...m, year:yr, firstReg:"0"+(1+h%9)+"/"+yr, color:COLORS[h%COLORS.length], doors:5, seats:5,
-    emission:"Euro 6d", priceLow:Math.round(est*.95/100)*100, priceHigh:Math.round(est*1.05/100)*100, priceMid:est, comps:7, mileageGuess:Math.round(age*14500/1000)*1000};
-}
-
-/* ---------- SVG art (placeholder photos & guides) ---------- */
+/* ---------- SVG art ---------- */
 function carSide(fill){return `<g><path d="M20 70 Q22 52 46 48 L78 32 Q90 26 110 26 L150 26 Q168 26 182 40 L196 50 Q214 52 218 62 L220 72 Q220 78 212 78 L28 78 Q20 78 20 70Z" fill="${fill}"/><path d="M84 34 L110 30 L112 50 L70 50Z M118 30 L150 30 Q162 30 174 44 L176 50 L120 50Z" fill="rgba(200,225,255,.55)"/><circle cx="62" cy="78" r="15" fill="#1f2937"/><circle cx="62" cy="78" r="7" fill="#9ca3af"/><circle cx="178" cy="78" r="15" fill="#1f2937"/><circle cx="178" cy="78" r="7" fill="#9ca3af"/></g>`}
 function carFront(fill){return `<g><path d="M50 40 Q60 22 120 22 Q180 22 190 40 L200 62 Q204 80 196 88 L44 88 Q36 80 40 62Z" fill="${fill}"/><path d="M66 40 Q74 28 120 28 Q166 28 174 40 L178 50 L62 50Z" fill="rgba(200,225,255,.55)"/><rect x="58" y="60" width="30" height="10" rx="4" fill="#fff8d6"/><rect x="152" y="60" width="30" height="10" rx="4" fill="#fff8d6"/><rect x="98" y="66" width="44" height="12" rx="3" fill="#111827"/><rect x="48" y="86" width="22" height="14" rx="3" fill="#1f2937"/><rect x="170" y="86" width="22" height="14" rx="3" fill="#1f2937"/></g>`}
 function car34(fill){return `<g><path d="M20 74 Q22 56 44 52 L80 34 Q92 28 114 28 L150 30 Q168 32 178 46 L200 52 Q222 56 224 68 L224 80 L30 84 Q20 82 20 74Z" fill="${fill}"/><path d="M86 38 L112 33 L114 52 L72 54Z M120 33 L148 34 Q160 36 170 48 L120 52Z" fill="rgba(200,225,255,.55)"/><path d="M196 58 L222 62 L222 72 L198 70Z" fill="#fff8d6"/><circle cx="62" cy="84" r="14" fill="#1f2937"/><circle cx="62" cy="84" r="6" fill="#9ca3af"/><circle cx="186" cy="84" r="16" fill="#1f2937"/><circle cx="186" cy="84" r="7" fill="#9ca3af"/></g>`}
@@ -306,13 +317,13 @@ function art(view, fill, flip){
   switch(view){
     case "front": case "rear": body = carFront(fill); break;
     case "side": body = carSide(fill); break;
-    case "f34": case "r34": body = car34(fill); break;
+    case "f34": body = car34(fill); break;
     case "dash": body = `<rect x="20" y="40" width="200" height="60" rx="18" fill="#1f2937"/><rect x="40" y="48" width="64" height="26" rx="6" fill="#0ea5e9" opacity=".7"/><rect x="120" y="50" width="70" height="40" rx="6" fill="#111827" stroke="#334155"/><circle cx="72" cy="94" r="22" fill="none" stroke="#475569" stroke-width="8"/>`; break;
     case "seat": body = `<path d="M70 96 L76 40 Q78 26 96 26 L110 26 Q126 26 124 42 L118 96Z" fill="#374151"/><path d="M130 96 L136 40 Q138 26 156 26 L170 26 Q186 26 184 42 L178 96Z" fill="#374151"/><rect x="60" y="88" width="132" height="14" rx="6" fill="#1f2937"/>`; break;
     case "trunk": body = `<path d="M40 30 L200 30 L216 96 L24 96Z" fill="#1f2937"/><path d="M58 44 L182 44 L194 88 L46 88Z" fill="#374151"/>`; break;
-    case "wheel": body = `<circle cx="120" cy="62" r="42" fill="#111827"/><circle cx="120" cy="62" r="26" fill="#9ca3af"/><g stroke="#6b7280" stroke-width="5">${[0,72,144,216,288].map(a=>`<line x1="120" y1="62" x2="${120+24*Math.cos(a*Math.PI/180)}" y2="${62+24*Math.sin(a*Math.PI/180)}"/>`).join("")}</g><circle cx="120" cy="62" r="6" fill="#374151"/>`; break;
-    case "odo": body = `<rect x="30" y="30" width="180" height="64" rx="16" fill="#0b1220"/><text x="120" y="70" font-family="monospace" font-size="22" fill="#38bdf8" text-anchor="middle">${esc(S.mileage? Number(S.mileage).toLocaleString("en-GB"):"72,400")} km</text>`; break;
-    case "engine": body = `<rect x="40" y="30" width="160" height="66" rx="10" fill="#374151"/><rect x="80" y="42" width="80" height="34" rx="6" fill="#111827"/><circle cx="60" cy="50" r="8" fill="#f59e0b"/><circle cx="182" cy="50" r="8" fill="#60a5fa"/>`; break;
+    case "wheel": body = `<circle cx="120" cy="62" r="42" fill="#111827"/><circle cx="120" cy="62" r="26" fill="#9ca3af"/><circle cx="120" cy="62" r="6" fill="#374151"/>`; break;
+    case "odo": body = `<rect x="30" y="30" width="180" height="64" rx="16" fill="#0b1220"/><text x="120" y="70" font-family="monospace" font-size="22" fill="#38bdf8" text-anchor="middle">78,400 km</text>`; break;
+    case "engine": body = `<rect x="40" y="30" width="160" height="66" rx="10" fill="#374151"/><rect x="80" y="42" width="80" height="34" rx="6" fill="#111827"/>`; break;
   }
   const t = flip ? ` transform="translate(240 0) scale(-1 1)"` : "";
   return `<g${t}>${body}</g>`;
@@ -324,215 +335,151 @@ function photoSrc(angle, carFill, seed, dark){
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 function silhouette(angle){return `<svg class="sil" viewBox="0 0 240 110">${art(angle.view,"currentColor",angle.flip).replace(/fill="(?!none)[^"]*"/g,'fill="currentColor"')}</svg>`}
-function guideOutline(angle){
-  return `<svg class="guide" viewBox="0 0 240 110"><g fill="none" stroke="#7dd3fc" stroke-width="1.6" stroke-dasharray="5 4" opacity=".95">${art(angle.view,"none",angle.flip).replace(/fill="[^"]*"/g,'fill="none"')}</g></svg>`;
-}
-const CAR_FILLS = {Volkswagen:"#6b7280",BMW:"#1e3a8a","Škoda":"#e5e7eb","Mercedes-Benz":"#111827",Renault:"#b91c1c",Audi:"#475569"};
-const fillFor = car => car ? (car.color.includes("black")?"#1f2937":car.color.includes("white")?"#f3f4f6":car.color.includes("blue")?"#1e40af":car.color.includes("red")?"#b91c1c":"#6b7280") : "#6b7280";
-const thumb = (name) => photoSrc(ANGLES[0], {golf:"#6b7280",bmw:"#1e3a8a",clio:"#b91c1c"}[name]||"#6b7280", hashStr(name)%4);
+function guideOutline(angle){return `<svg class="guide" viewBox="0 0 240 110"><g fill="none" stroke="#7dd3fc" stroke-width="1.6" stroke-dasharray="5 4" opacity=".95">${art(angle.view,"none",angle.flip).replace(/fill="[^"]*"/g,'fill="none"')}</g></svg>`}
+const FILLS = {golf:"#6b7280",bmw:"#1e3a8a",skoda:"#e5e7eb",clio:"#b91c1c",a4:"#475569",aclass:"#111827"};
+const thumb = name => photoSrc(ANGLES[0], FILLS[name]||"#6b7280", hashStr(name)%4);
 
-/* ---------- quality ---------- */
-function quality(){
-  const items = [];
-  const specsOK = !!S.car && !S.car.unknown;
-  items.push({k:"specs", ok:specsOK, label:"Specs complete from VIN", pts:specsOK?30:0, fix:"vin"});
-  const mpOK = Number(S.mileage)>0 && Number(S.price)>0;
-  items.push({k:"mp", ok:mpOK, label:"Mileage and price entered", pts:mpOK?10:0, fix:"details"});
-  const n = Object.keys(S.photos).length;
-  const reqDone = ANGLES.filter(a=>a.req && S.photos[a.id] && !S.flagged[a.id]).length;
-  const photoPts = Math.round(25*Math.min(reqDone/REQ_COUNT,1) + 10*Math.min(Math.max(n-reqDone,0)/(ANGLES.length-REQ_COUNT),1));
-  const missingReq = ANGLES.filter(a=>a.req && (!S.photos[a.id]||S.flagged[a.id])).map(a=>a.name);
-  items.push({k:"photos", ok:missingReq.length===0, label: missingReq.length? `Required photos: ${missingReq.length} missing` : `Required photos done (${n} of 15)`, pts:photoPts, fix:"photos", detail:missingReq.slice(0,3).join(", ")+(missingReq.length>3?" …":"")});
-  const dOK = S.desc.trim().length>120 && S.descConfirmed;
-  items.push({k:"desc", ok:dOK, label: dOK? "Description confirmed" : (S.desc? "Description not confirmed yet":"No description yet"), pts: dOK?20:(S.desc?8:0), fix:"desc"});
-  let pricePts = 0, priceOK=false;
-  if(specsOK && Number(S.price)>0){ priceOK = Number(S.price) <= S.car.priceHigh*1.03; pricePts = priceOK?5:0; }
-  items.push({k:"price", ok:priceOK, label: !Number(S.price)?"Price position unknown": priceOK? "Price within comparable range" : "Price above comparable cars", pts:pricePts, fix:"details"});
-  const score = Math.min(100, items.reduce((a,b)=>a+b.pts,0));
-  return {score, items};
-}
-function qualityBar(){
-  const q = quality(); const c = q.score>=QUALITY_BAR ? "var(--ok)" : q.score>=50 ? "var(--warn)" : "var(--bad)";
-  return `<div class="quality" title="Quality bar at ${QUALITY_BAR}"><span class="lbl">Listing quality</span><div class="bar"><i style="width:${q.score}%;background:${c}"></i><span class="mark"></span></div><b style="color:${c}">${q.score}</b></div>`;
+/* ---------- BMW rating model (illustrative) ---------- */
+function bmwRating(){
+  const r = S.bmw.radius;
+  const maxKm = r==="100"?100 : r==="200"?200 : 9999;
+  const warrantyOn = !!S.bmw.ticks.warranty;
+  let comps = BMW_COMPS.filter(c=>c.km<=maxKm);
+  if(warrantyOn){ const w = comps.filter(c=>c.w); if(w.length>=3) comps = w; }
+  const ps = comps.map(c=>c.p).sort((a,b)=>a-b);
+  const mid = ps.length%2 ? ps[(ps.length-1)/2] : (ps[ps.length/2-1]+ps[ps.length/2])/2;
+  const extra = BMW_DETAILS.filter(d=>S.bmw.ticks[d.id] && d.id!=="warranty").reduce((a,d)=>a+d.val,0);
+  const ref = mid + extra;
+  const ratio = BMW_PRICE/ref;
+  const band = ratio<=0.97?0 : ratio<=1.03?1 : ratio<=1.07?2 : ratio<=1.12?3 : 4;
+  const goodFrom = Math.floor(ref*1.03/100)*100;
+  return {comps, mid, extra, ref, band, goodFrom, warrantyOn};
 }
 
 /* ---------- layout ---------- */
-const FLOW = ["vin","details","photos","desc","review"];
-function header(title, back, stepIdx){
-  const pct = stepIdx!=null ? ((stepIdx+1)/FLOW.length*100) : 0;
-  return `<div class="top">${back?`<button class="back" data-go="${back}" aria-label="Back">‹</button>`:`<span style="width:8px"></span>`}<div class="title">${title}</div>${stepIdx!=null?`<span class="step">Step ${stepIdx+1} of ${FLOW.length}</span>`:""}</div>${stepIdx!=null?`<div class="progress"><i style="width:${pct}%"></i></div>`:""}`;
+function header(title, back){
+  return `<div class="top">${back?`<button class="back" data-go="${back}" aria-label="Back">‹</button>`:`<span style="width:8px"></span>`}<div class="title">${title}</div></div>`;
 }
 function tabs(active){
   const ic = {
     home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
     stock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14l-1.5-6.5A2 2 0 0 0 15.6 9H8.4a2 2 0 0 0-1.9 1.5zM7 17v2M17 17v2"/><circle cx="8" cy="14" r="1"/><circle cx="16" cy="14" r="1"/></svg>',
-    leads:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H8l-4 4z"/></svg>',
+    leads:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H8l-4 4z"/></svg>'
   };
-  return `<nav class="tabs"><button class="${active==="home"?"on":""}" data-go="home">${ic.home}Today</button><button class="${active==="stock"?"on":""}" data-go="stock">${ic.stock}Stock</button><button data-toast="Leads inbox is bet 3, not part of this prototype">${ic.leads}Leads</button></nav>`;
+  return `<nav class="tabs"><button class="${active==="home"?"on":""}" data-go="home">${ic.home}Car check</button><button class="${active==="stock"?"on":""}" data-go="stock">${ic.stock}Stock</button><button data-toast="Leads inbox is bet 3, not part of this prototype">${ic.leads}Leads</button></nav>`;
 }
 
 /* ---------- screens ---------- */
 const V = {};
 
 V.home = () => {
-  const open = S.alerts.filter(a=>!a.fixed);
+  const list = sorted();
+  const open = list.filter(a=>!a.fixed);
   return `${header("Good morning, Autohaus Berger")}
   <div class="screen">
-    <div class="home-hero">
-      <div class="tiny" style="color:rgba(255,255,255,.8)">New car in stock?</div>
-      <h2>List it in about 5 minutes</h2>
-      <div style="font-size:14px;opacity:.9">Enter the VIN, we fill in the specs and guide you through the photos.</div>
-      <button class="btn" data-go="vin">+ Add a car</button>
+    <div class="sumcard">
+      <div class="tiny" style="color:rgba(255,255,255,.85)">Weekly car check · Monday</div>
+      <h2 style="color:#fff;margin:2px 0 0">${open.length? `${open.length} of 48 cars need attention` : "All 48 cars look fine this week"}</h2>
+      <div class="k"><div><b>48</b><span>cars online</span></div><div><b>€1.04M</b><span>listed value</span></div><div><b>7</b><span>over 60 days</span></div></div>
     </div>
-    <div class="row split"><h3 style="margin:6px 0 8px">${open.length? `${open.length} car${open.length>1?"s":""} need${open.length===1?"s":""} attention`:"All cars look good this week"}</h3><span class="tiny">Weekly check · Mon</span></div>
-    ${S.alerts.map(a=>`<div class="card alert ${a.fixed?"fixed":""}">
+    <p class="tiny" style="margin:-4px 0 10px">All your listings are checked, whether they come from your DMS or were listed on mobile.de. Most value × days online first.</p>
+    ${list.map(a=>`<div class="card alert ${a.fixed?"fixed":""}">
         <img src="${thumb(a.img)}" alt="">
         <div style="flex:1">
-          <div class="t">${a.title} ${a.fixed?'<span class="pill vin">Fixed</span>':""}</div>
-          <div class="why">${a.fixed? esc(a.fixedNote||"Fixed."): esc(a.why)}</div>
+          <div class="t">${esc(a.title)} ${a.fixed?'<span class="pill vin">Done</span>':""}</div>
+          <div class="meta">${fmtEUR(a.price)} · ${a.days} days online <span class="src">${a.src==="DMS"?"via DMS":"mobile.de"}</span></div>
+          <div class="why">${a.fixed? esc(a.fixedNote||"Done.") : esc(a.why)}</div>
           ${a.fixed? `<button class="act" data-undo="${a.id}">Undo</button>` : `<button class="act" data-alert="${a.id}">${a.action} →</button>`}
         </div></div>`).join("")}
-    ${S.published? `<h3>Just published</h3><div class="card alert"><img src="${S.photos[ANGLES[0].id]||thumb("golf")}" alt=""><div style="flex:1"><div class="t">${esc(S.car.make+" "+S.car.model+" "+S.car.year)}</div><div class="why">Live at the quality bar · ${quality().score}/100</div><span class="pill vin">Live</span></div></div>`:""}
-    <p class="tiny" style="margin-top:14px">Few alerts, each with a reason and a one-click fix. Every change can be undone.</p>
+    <p class="tiny" style="margin-top:14px">At most 3 cars a week, each with one reason and one fix. No price-cut suggestions. Every change can be undone.</p>
   </div>${tabs("home")}`;
 };
 
 V.stock = () => {
+  const bmwBand = BANDS[bmwRating().band];
   const cars = [
-    {img:"golf", t:"VW Golf 2019", m:"6 photos · 18 days online", q:58},
-    {img:"bmw", t:"BMW 320d 2018", m:"14 photos · 31 days online", q:74},
-    {img:"clio", t:"Renault Clio 2020", m:"12 photos · 9 days online", q:66},
+    {img:"skoda", t:"Škoda Octavia Combi 2020", p:19400, d:63, src:"mobile.de", band:"Fair", lead:"−20%"},
+    {img:"golf", t:"VW Golf 2019", p:16900, d:52, src:"mobile.de", band:"Good", lead: S.alerts.find(a=>a.id==="golf").fixed?"new photos":"−50%"},
+    {img:"bmw", t:"BMW 520d Touring 2019", p:27900, d:41, src:"DMS", band:bmwBand, lead:"−55%"},
+    {img:"a4", t:"Audi A4 Avant 2021", p:29900, d:22, src:"DMS", band:"Good", lead:"+10%"},
+    {img:"aclass", t:"Mercedes A 200 2020", p:22900, d:14, src:"DMS", band:"Fair", lead:"±0%"},
+    {img:"clio", t:"Renault Clio 2020", p:12900, d:9, src:"mobile.de", band:"Very good", lead:"+25%"}
   ];
-  if(S.published) cars.unshift({src:S.photos[ANGLES[0].id], t:S.car.make+" "+S.car.model+" "+S.car.year, m:Object.keys(S.photos).length+" photos · new", q:quality().score});
+  const bandIdx = b => BANDS.indexOf(b);
   return `${header("Stock")}
-  <div class="screen"><div class="card">${cars.map(c=>`<div class="stock"><img src="${c.src||thumb(c.img)}" alt=""><div class="m"><b>${esc(c.t)}</b>${c.m}</div><span class="pill ${c.q>=QUALITY_BAR?"vin":c.q>=50?"warn":"bad"}">${c.q}</span></div>`).join("")}</div>
-  <p class="tiny" style="margin-top:10px">Number = listing quality score. Quality bar: ${QUALITY_BAR}.</p></div>${tabs("stock")}`;
+  <div class="screen"><div class="card">${cars.map(c=>`<div class="stock"><img src="${thumb(c.img)}" alt=""><div class="m"><b>${esc(c.t)}</b>${fmtEUR(c.p)} · ${c.d} days <span class="src">${c.src==="DMS"?"DMS":"mobile.de"}</span><br><span class="tiny">Contacts vs. similar cars: ${c.lead}</span></div><span class="pill ${bandIdx(c.band)<=1?"vin":bandIdx(c.band)===2?"brand":"warn"}">${c.band}</span></div>`).join("")}</div>
+  <p class="tiny" style="margin-top:10px">Pill = price rating as buyers see it. Showing 6 of 48 cars.</p></div>${tabs("stock")}`;
 };
 
-V.vin = () => {
-  const err = S.vin.length===17 ? validVin(S.vin) : null;
-  return `${header("Add a car","home",0)}
+V.bmw = () => {
+  const r = bmwRating();
+  const col = BAND_COL[r.band];
+  const shown = BMW_DETAILS.filter(d=>S.bmw.ticks[d.id]);
+  return `${header("BMW 520d Touring 2019","home")}
   <div class="screen">
-    <h2>Enter the VIN</h2>
-    <p class="muted">We fill in make, model, engine and equipment from the VIN. No typing of specs.</p>
-    <div class="scan" id="scanBox"><span class="plate">Point the camera at the VIN plate</span><div class="beam"></div></div>
-    <div class="row" style="margin-bottom:14px"><button class="btn ghost small" id="scanBtn" style="flex:1">📷 Scan VIN</button><button class="btn ghost small" id="demoBtn" style="flex:1">Use demo VIN</button></div>
-    <div class="field">
-      <label for="vin">VIN (17 characters)</label>
-      <input id="vin" class="input mono ${err?"err":""}" maxlength="17" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="WVWZZZ…" value="${esc(S.vin)}">
-      <div class="hint ${err?"err":""}" id="vinHint">${err||`${S.vin.length}/17 · on the windscreen, door frame or registration document (field E)`}</div>
+    <p class="meta">${fmtEUR(BMW_PRICE)} · 98,000 km · 41 days online <span class="src">via DMS</span></p>
+    <div class="card">
+      <div class="tiny">Price rating buyers see</div>
+      <div class="bandnow" style="color:${col}">${BANDS[r.band]} price</div>
+      <div class="bands">${BANDS.map((b,i)=>`<span class="${i===r.band?"on":""}" style="background:${BAND_COL[i]};opacity:${i===r.band?1:.35}"></span>`).join("")}</div>
+      <div class="bandlbl">${BANDS.map(b=>`<span>${b}</span>`).join("")}</div>
     </div>
-    <div id="vinResult"></div>
+
+    <h3>What our rating can't see</h3>
+    <p class="tiny" style="margin:-4px 0 8px">The VIN gives us model and factory equipment. Condition and what you added, only you know.</p>
+    ${BMW_DETAILS.map(d=>`<button class="tick ${S.bmw.ticks[d.id]?"on":""}" data-tick="${d.id}"><span class="bx">${S.bmw.ticks[d.id]?"✓":""}</span>${esc(d.label)}</button>`).join("")}
+
+    <h3>Compare with cars in</h3>
+    <div class="seg">${[["100","100 km"],["200","200 km"],["de","Germany"]].map(([k,l])=>`<button class="${S.bmw.radius===k?"on":""}" data-radius="${k}">${l}</button>`).join("")}</div>
+    <p class="tiny">Your buyers search near you. You set the market you compete in.</p>
+
+    <h3>Why “${BANDS[r.band]}”</h3>
+    <p class="muted" style="font-size:14px">Middle of ${r.comps.length} similar cars${S.bmw.radius==="de"?" across Germany":" within "+S.bmw.radius+" km"}${r.warrantyOn?", all with dealer warranty":""}: <b>${fmtEUR(r.mid)}</b>${r.extra?` + ${fmtEUR(r.extra)} for your details`:""}.</p>
+    <div class="card" style="margin-top:8px">${r.comps.map(c=>`<div class="comp"><span>${esc(c.t)}<br><span class="tiny">${c.km} km away${c.w?" · dealer warranty":" · no warranty"}</span></span><b>${fmtEUR(c.p)}</b></div>`).join("")}<div class="comp me" style="color:var(--ink)"><span>Your car</span><span>${fmtEUR(BMW_PRICE)}</span></div></div>
+    <p class="tiny" style="margin-top:8px">No price change suggested: your price, your margin. For reference, “Good” goes up to ${fmtEUR(r.goodFrom)}.</p>
+
+    ${shown.length?`<h3>Buyers will see</h3><div class="badges">${shown.map(d=>`<span class="pill vin">✓ ${esc(d.label)}</span>`).join("")}</div><p class="tiny" style="margin-top:6px">Marked as dealer statements. Kept when your DMS updates the listing.</p>`:""}
+    <div class="note">Illustrative: how much each detail counts is set by the pricing model and tested with dealers. Guardrails: ratings must not drift up because everything gets ticked; buyer complaints about condition are tracked.</div>
   </div>
-  <div class="foot"><button class="btn" id="vinGo" ${S.vin.length===17&&!err?"":"disabled"}>Look up VIN</button></div>`;
+  <div class="foot"><button class="btn" id="bmwSave" ${shown.length||S.bmw.radius!=="de"?"":"disabled"}>Save and update listing</button></div>`;
 };
 
-V.details = () => {
-  const c = S.car;
-  const specs = [["Make",c.make],["Model",c.model],["Trim",c.trim],["First registration",c.firstReg],["Engine",c.engine],["Power",c.power],["Fuel",c.fuel],["Gearbox",c.gearbox],["Body",c.body],["Colour",c.color],["Emission class",c.emission],["CO₂",c.co2]];
-  const p = Number(S.price);
-  let priceHint = `7 comparable cars: <b>${fmtEUR(c.priceLow)} – ${fmtEUR(c.priceHigh)}</b>`;
-  let priceCls = "";
-  if(p>0){
-    if(p>c.priceHigh*1.03){priceHint += ` · yours is <b style="color:var(--bad)">${fmtEUR(p-c.priceHigh)} above</b> the range`; priceCls="err"}
-    else if(p<c.priceLow*.97){priceHint += ` · yours is below the range, you may leave money on the table`}
-    else priceHint += ` · <b style="color:var(--ok)">in range</b>`;
-  }
-  return `${header("Car details","vin",1)}
+const SKODA_Q = [
+  {id:"acc", q:"Accident-free?", asked:"asked in 5 of 9 inquiries", opts:["Accident-free","Repaired damage","Not stated"]},
+  {id:"belt", q:"Timing belt changed?", asked:"asked in 4 of 9", opts:["Changed at 120,000 km","Due soon","Not documented"]},
+  {id:"book", q:"Service book?", asked:"asked in 3 of 9", opts:["Complete","Partly","No"]}
+];
+V.skoda = () => {
+  const a = S.skoda.a; const n = Object.keys(a).length;
+  return `${header("Škoda Octavia Combi 2020","home")}
   <div class="screen">
-    ${qualityBar()}
-    <div class="row split"><h2 style="margin:0">${esc(c.make)} ${esc(c.model)}</h2><span class="pill vin">✓ From VIN data</span></div>
-    <p class="tiny" style="margin:4px 0 12px">VIN ${esc(S.vin)} · ${c.year}</p>
-    <div class="specs">${specs.map((s,i)=>`<div class="spec" style="animation-delay:${i*45}ms"><span>${s[0]}</span><b>${esc(s[1])}</b></div>`).join("")}</div>
-    <p class="tiny" style="margin-top:8px">Something wrong? <button style="color:var(--brand);font-weight:600" data-toast="In the real app: report a VIN data error, we fix it at the source">Report a VIN data error</button></p>
-    <h3>Only two things we can't know</h3>
-    <div class="field"><label for="mileage">Mileage</label><input id="mileage" class="input" inputmode="numeric" placeholder="e.g. ${c.mileageGuess.toLocaleString("en-GB")}" value="${esc(S.mileage)}"><div class="hint">We check it against the odometer photo later.</div></div>
-    <div class="field"><label for="price">Your price (€)</label><input id="price" class="input ${priceCls}" inputmode="numeric" placeholder="e.g. ${c.priceMid}" value="${esc(S.price)}"><div class="hint" id="priceHint">${priceHint}</div>
-      <button class="tiny" style="color:var(--brand);font-weight:600;margin-top:6px" id="useMid">Use the middle of the range (${fmtEUR(c.priceMid)})</button></div>
+    <p class="meta">${fmtEUR(19400)} · 141,000 km · 63 days online <span class="src">mobile.de</span></p>
+    <h2>Answer once, in the listing</h2>
+    <p class="muted" style="margin-bottom:10px">Buyers keep asking the same three things. Answer here and they see it before they write.</p>
+    <div class="card">${SKODA_Q.map(q=>`<div class="qa"><div class="q">${q.q}</div><div class="n">${q.asked}</div>
+      <div class="seg">${q.opts.map((o,i)=>`<button class="${a[q.id]===i?"on":""}" data-ans="${q.id}:${i}" style="font-size:12px">${o}</button>`).join("")}</div></div>`).join("")}</div>
+    ${n?`<h3>Buyers will see</h3><div class="card"><b style="font-size:13px">Answered by the dealer</b>${SKODA_Q.filter(q=>a[q.id]!=null).map(q=>`<div class="comp"><span>${q.q}</span><b>${q.opts[a[q.id]]}</b></div>`).join("")}</div>`:""}
+    <div class="note">Fewer repeat questions for the dealer; buyers who still write already know the basics. “Not stated” is a fine answer: the dealer decides what to show.</div>
   </div>
-  <div class="foot"><button class="btn" data-go="photos" ${Number(S.mileage)>0&&Number(S.price)>0?"":"disabled"} id="detGo">Continue to photos</button></div>`;
+  <div class="foot"><button class="btn" id="skodaSave" ${n?"":"disabled"}>Add ${n||""} answer${n===1?"":"s"} to the listing</button></div>`;
 };
 
 V.photos = () => {
   const n = Object.keys(S.photos).length;
   const reqLeft = ANGLES.filter(a=>a.req && (!S.photos[a.id]||S.flagged[a.id])).length;
-  const back = S.alertMode==="golf" ? "home" : "details";
-  return `${header(S.alertMode==="golf"?"VW Golf 2019 · photos":"Photo guide", back, S.alertMode?null:2)}
+  return `${header("VW Golf 2019 · photos","home")}
   <div class="screen">
-    ${S.alertMode?"":qualityBar()}
-    <h2>${n} of 15 photos</h2>
-    <p class="muted" style="margin-bottom:12px">${reqLeft? `<b>${reqLeft} required</b> to reach the quality bar (orange dot). Tap a slot, we guide every shot.` : `All required shots done. Extra angles help buyers decide.`}</p>
+    <h2>${n} of ${ANGLES.length} photos</h2>
+    <p class="muted" style="margin-bottom:12px">${reqLeft? `<b>${reqLeft} shots</b> buyers look for are missing (orange dot), mostly the interior. Tap a slot, we guide every shot.` : `All key shots done. Buyers can now judge the condition.`}</p>
     <div class="grid">${ANGLES.map((a,i)=>{
       const src = S.photos[a.id];
       if(src) return `<button class="slot done" data-shot="${a.id}" aria-label="${a.name}, retake"><img src="${src}" alt="${a.name}">${S.flagged[a.id]?'<span class="flag pill warn">Too dark</span>':'<span class="ok">✓</span>'}</button>`;
       return `<button class="slot ${a.req?"req":""}" data-shot="${a.id}"><span class="n">${i+1}</span>${silhouette(a)}${a.name}</button>`;
     }).join("")}</div>
-    <div class="row" style="margin-top:12px"><button class="btn ghost small" id="autoShoot" style="flex:1">${n?"Fill the rest (demo)":"Take all 15 (demo)"}</button><button class="btn ghost small" id="nextMissing" style="flex:1" ${reqLeft?"":"disabled"}>Next missing shot</button></div>
-    <div class="note">The check runs on the phone: angle, brightness, sharpness, plate blur. It tells the dealer what's missing instead of rejecting the listing.</div>
+    <div class="row" style="margin-top:12px"><button class="btn ghost small" id="autoShoot" style="flex:1">Fill the rest (demo)</button><button class="btn ghost small" id="nextMissing" style="flex:1" ${reqLeft?"":"disabled"}>Next missing shot</button></div>
+    <div class="note">The check runs on the phone: angle, brightness, sharpness, plate blur. It tells the dealer what's missing, it doesn't block anything.</div>
   </div>
-  <div class="foot">${S.alertMode==="golf"
-    ? `<button class="btn" id="golfDone" ${reqLeft?"disabled":""}>Update listing</button>`
-    : `<button class="btn" data-go="desc" ${reqLeft?"disabled":""}>${reqLeft?`${reqLeft} required photo${reqLeft>1?"s":""} missing`:"Continue to description"}</button>`}</div>`;
-};
-
-function buildDescription(tone){
-  const c = S.car, km = Number(S.mileage)||c.mileageGuess;
-  const nInt = ANGLES.filter(a=>a.kind==="int" && S.photos[a.id]).length;
-  const lines = {
-    short:`${c.make} ${c.model} ${c.trim}, first registered ${c.firstReg}, ${fmtKM(km)}. ${c.engine} with ${c.power}, ${c.gearbox}. ${c.color}. ${nInt>=3?"Interior shown in detail in the photos.":""} Test drive by appointment.`,
-    balanced:`${c.make} ${c.model} ${c.trim} in ${c.color}, first registered ${c.firstReg}, ${fmtKM(km)}.\n\nEngine and drivetrain: ${c.engine}, ${c.power}, ${c.fuel.toLowerCase()}, ${c.gearbox}. Emission class ${c.emission}, CO₂ ${c.co2}.\n\nBody: ${c.body.toLowerCase()}, ${c.seats} seats. ${nInt>=3?"Interior, boot and dashboard are shown in the photos.":"See the photos for the exterior."}\n\nWe're happy to arrange a test drive. Financing and trade-in on request.`,
-    detailed:`${c.make} ${c.model} ${c.trim} · ${c.year} · ${fmtKM(km)}\n\nWhat you get: a ${c.body.toLowerCase()} in ${c.color}, first registered ${c.firstReg}. The ${c.engine} delivers ${c.power} and is paired with a ${c.gearbox}. Fuel: ${c.fuel.toLowerCase()}, emission class ${c.emission}, CO₂ ${c.co2}.\n\nPhotos: ${Object.keys(S.photos).length} photos from all angles${nInt>=3?", including dashboard, seats and boot":""}${S.photos.odo?", odometer reading included":""}.\n\n[Add: service history, number of owners, equipment you want to highlight]\n\nTest drive, financing and trade-in on request.`
-  };
-  return lines[tone].replace(/ +\n/g,"\n").replace(/  +/g," ").trim();
-}
-
-V.desc = () => {
-  const c = S.car;
-  return `${header("Description","photos",3)}
-  <div class="screen">
-    ${qualityBar()}
-    <div class="row split"><h2 style="margin:0">Your description</h2><span class="pill ai">✦ AI draft</span></div>
-    <p class="muted" style="margin:4px 0 10px">Drafted from the VIN specs, your mileage and your photos. Edit anything, then confirm.</p>
-    <div class="chips">${["short","balanced","detailed"].map(t=>`<button class="chip ${S.tone===t?"on":""}" data-tone="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join("")}<button class="chip" id="regen">↻ Redraft</button></div>
-    <textarea id="desc" class="desc" placeholder="Drafting…">${esc(S.desc)}</textarea>
-    <div class="facts"><b>Facts used:</b> ${esc(c.make)} ${esc(c.model)} ${esc(c.trim)}, ${c.firstReg}, ${esc(c.engine)}, ${esc(c.power)}, ${esc(c.gearbox)}, ${esc(c.color)} <span class="pill vin">VIN</span> · ${fmtKM(Number(S.mileage))} <span class="pill brand">You</span> · ${Object.keys(S.photos).length} photos <span class="pill brand">You</span><br>Equipment, accident history and owners are <b>never guessed</b>: the draft leaves a placeholder.</div>
-    <label class="check"><input type="checkbox" id="confirm" ${S.descConfirmed?"checked":""}> I checked the description. The facts are correct.</label>
-  </div>
-  <div class="foot"><button class="btn" data-go="review" id="descGo" ${S.descConfirmed&&S.desc.trim().length>120?"":"disabled"}>Review listing</button></div>`;
-};
-
-V.review = () => {
-  const q = quality(); const c=S.car;
-  const col = q.score>=QUALITY_BAR?"var(--ok)":q.score>=50?"var(--warn)":"var(--bad)";
-  const R=56, C=2*Math.PI*R;
-  return `${header("Review","desc",4)}
-  <div class="screen">
-    <div class="ring"><svg viewBox="0 0 132 132"><circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--line)" stroke-width="12"/><circle id="ringArc" cx="66" cy="66" r="${R}" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}"/></svg><div class="v"><div><b style="color:${col}">${q.score}</b><span>quality · bar ${QUALITY_BAR}</span></div></div></div>
-    <p style="text-align:center;margin-bottom:12px" class="muted">${q.score>=QUALITY_BAR? "Ready to publish at the quality bar." : "Below the quality bar. You can still publish, or fix the points below."}</p>
-    <div class="card"><ul class="checklist">${q.items.map(i=>`<li><span class="ic ${i.ok?"y":"n"}">${i.ok?"✓":"!"}</span><span>${esc(i.label)}${i.detail&&!i.ok?`<br><span class="tiny">${esc(i.detail)}</span>`:""}</span>${i.ok?"":`<button class="fix" data-go="${i.fix}">Fix</button>`}</li>`).join("")}</ul></div>
-    <h3>Buyer preview</h3>
-    <div class="preview"><img src="${S.photos.f34l}" alt="Cover photo"><div class="pv"><div style="font-weight:700">${esc(c.make)} ${esc(c.model)} ${esc(c.trim)}</div><div class="tiny">${c.firstReg} · ${fmtKM(Number(S.mileage))} · ${esc(c.power)} · ${esc(c.fuel)}</div><div class="price" style="margin-top:6px">${fmtEUR(Number(S.price))}</div><div class="tiny">Autohaus Berger · ${Object.keys(S.photos).length} photos</div></div></div>
-  </div>
-  <div class="foot"><button class="btn" id="publish">Publish listing</button></div>`;
-};
-
-V.done = () => {
-  return `${header("Published")}
-  <div class="screen"><div class="success">
-    <div class="big">✓</div>
-    <h2>Your ${esc(S.car.make)} ${esc(S.car.model)} is live</h2>
-    <p class="muted">Quality ${quality().score}/100, above the bar.</p>
-    <div class="card" style="text-align:left;margin-top:18px">
-      <div class="row split"><b>What happens next</b><span class="pill brand">Weekly check</span></div>
-      <ul class="checklist" style="margin-top:6px">
-        <li><span class="ic y">1</span><span>We compare its leads with similar cars every week.</span></li>
-        <li><span class="ic y">2</span><span>If it falls behind, you get one alert with the reason and a one-click fix.</span></li>
-        <li><span class="ic y">3</span><span>Nothing changes without you: you review or undo every fix.</span></li>
-      </ul>
-    </div>
-    <p class="tiny" style="margin-top:14px">Illustrative example: in the case, similar cars with full photo sets sold about 12 days faster.</p>
-  </div></div>
-  <div class="foot"><button class="btn" data-go="home">Back to today</button></div>`;
+  <div class="foot"><button class="btn" id="golfDone" ${reqLeft?"disabled":""}>${reqLeft?`${reqLeft} key shot${reqLeft>1?"s":""} missing`:"Update listing"}</button></div>`;
 };
 
 /* ---------- sheets ---------- */
@@ -546,36 +493,13 @@ function sheet(html){
 }
 function closeSheet(){const s=$("#sheetBg");if(s)s.remove()}
 
-function bmwSheet(){
-  const comps = [["BMW 320d Touring 2018, 92,000 km","€21,900"],["BMW 320d Touring 2018, 105,000 km","€20,800"],["BMW 320d Touring 2019, 99,000 km","€22,400"],["BMW 320d Touring 2018, 88,000 km","€22,100"],["BMW 320d Touring 2017, 96,000 km","€20,500"],["BMW 320d Touring 2018, 110,000 km","€20,900"],["BMW 320d Touring 2018, 101,000 km","€21,600"]];
-  const xs=[21900,20800,22400,22100,20500,20900,21600], me=22500, sug=21600, lo=20000, hi=23000;
-  const pos = v => ((v-lo)/(hi-lo)*100).toFixed(1)+"%";
-  const s = sheet(`<h2>BMW 320d Touring 2018</h2><p class="muted">98,000 km · Sport Line · your price <b style="color:var(--bad)">€22,500</b></p>
-    <div class="dist"><div class="axis"></div>${xs.map(x=>`<span class="dot" style="left:${pos(x)}"></span>`).join("")}<span class="dot me" style="left:${pos(me)}"></span><span class="lab" style="left:${pos(me)};color:var(--bad)">You</span><span class="dot sug" style="left:${pos(sug)}"></span><span class="lab" style="left:${pos(sug)};color:var(--ok)">Suggested</span></div>
-    <h3>Why €21,600</h3>
-    <p class="muted" style="font-size:14px">Middle of 7 comparable cars (same model, ±1 year, ±15,000 km, within 150 km). Yours is €900 above it, and has had 40% fewer contacts in the last 14 days.</p>
-    <div class="card" style="margin-top:10px">${comps.map(c=>`<div class="comp"><span>${c[0]}</span><b>${c[1]}</b></div>`).join("")}<div class="comp me"><span>Your car, 98,000 km</span><span>€22,500</span></div></div>
-    <p class="tiny" style="margin-top:8px">Expected effect (illustrative): more contacts, sale about 10 days sooner.</p>
-    <div class="row" style="margin-top:14px"><button class="btn ghost" id="keepPrice" style="flex:1">Keep €22,500</button><button class="btn" id="setPrice" style="flex:1.3">Set €21,600</button></div>`);
-  $("#keepPrice",s).onclick=()=>{closeSheet();toast("Kept your price. We won't ask again for 14 days.")};
-  $("#setPrice",s).onclick=()=>{fixAlert("bmw","Price set to €21,600 (was €22,500).");closeSheet();toast("Price updated to €21,600",()=>undoAlert("bmw"))};
+function fixAlert(id,note){const a=S.alerts.find(x=>x.id===id);a.fixed=true;a.fixedNote=note;S.view="home";render()}
+function undoAlert(id){
+  const a=S.alerts.find(x=>x.id===id);a.fixed=false;a.fixedNote="";
+  if(id==="bmw") S.bmw={ticks:{},radius:"de"};
+  if(id==="skoda") S.skoda={a:{}};
+  render();toast("Undone. Back to the previous version.");
 }
-function clioSheet(){
-  const text = "Renault Clio Techno TCe 90 in Kings red metallic, first registered 04/2020, 54,000 km.\n\nEngine: 1.0 TCe, 67 kW / 91 hp, petrol, 6-speed manual. Emission class Euro 6d.\n\nCompact 5-door hatchback, ideal for the city. Interior, boot and dashboard are shown in the photos.\n\n[Add: service history, number of owners]\n\nTest drive, financing and trade-in on request.";
-  const s = sheet(`<div class="row split"><h2 style="margin:0">Renault Clio 2020</h2><span class="pill ai">✦ AI draft</span></div>
-    <p class="muted" style="margin:4px 0 10px">Current text: “Good condition. Call us.” Here's a draft from the VIN specs and your 12 photos.</p>
-    <textarea class="desc" id="clioText"></textarea>
-    <div class="facts">Facts from VIN data and your listing only. Placeholders where we don't know.</div>
-    <label class="check"><input type="checkbox" id="clioOk"> I checked the facts.</label>
-    <button class="btn" id="clioSave" disabled style="margin-top:8px">Replace description</button>`);
-  const ta=$("#clioText",s), ok=$("#clioOk",s), btn=$("#clioSave",s);
-  typeInto(ta,text);
-  ok.onchange=()=>btn.disabled=!ok.checked;
-  btn.onclick=()=>{fixAlert("clio","Description replaced with the reviewed draft.");closeSheet();toast("Description updated",()=>undoAlert("clio"))};
-}
-
-function fixAlert(id,note){const a=S.alerts.find(x=>x.id===id);a.fixed=true;a.fixedNote=note;render()}
-function undoAlert(id){const a=S.alerts.find(x=>x.id===id);a.fixed=false;a.fixedNote="";if(id==="golf"){}render();toast("Undone. Back to the previous version.")}
 
 /* ---------- camera ---------- */
 function openCamera(id){
@@ -583,7 +507,7 @@ function openCamera(id){
   const idx = ANGLES.indexOf(a);
   const cam = document.createElement("div"); cam.className="cam"; cam.id="cam";
   cam.innerHTML = `<div class="vf"><div class="ground"></div><div class="grid3"></div>${guideOutline(a)}
-      <div class="hdr"><button id="camClose" style="color:#fff;font-size:15px">✕ Close</button><span style="font-weight:700">${idx+1}/15 · ${a.name}</span><span style="width:50px"></span></div>
+      <div class="hdr"><button id="camClose" style="color:#fff;font-size:15px">✕ Close</button><span style="font-weight:700">${idx+1}/${ANGLES.length} · ${a.name}</span><span style="width:50px"></span></div>
       <div class="tip"><b>Fit the car into the outline</b>${esc(a.tip)}</div><div class="flash" id="flash"></div></div>
     <div class="bar2"><button class="side-btn" id="camGallery">Gallery</button><button class="shutter" id="shutter" aria-label="Take photo"><i></i></button><button class="side-btn" id="camSkip">Skip</button></div>`;
   app.appendChild(cam);
@@ -592,9 +516,9 @@ function openCamera(id){
   const take = ()=>{
     $("#flash").classList.remove("go");void $("#flash").offsetWidth;$("#flash").classList.add("go");
     S.photoCount++;
-    const dark = (S.photoCount===4 && !S.alertMode && !S.darkShown);
+    const dark = (S.photoCount===2 && !S.darkShown);
     if(dark) S.darkShown = true;
-    S.photos[id] = photoSrc(a, a.kind==="ext"?fillFor(S.alertMode==="golf"?{color:"grey"}:S.car):"#374151", (hashStr(id)+S.photoCount)%4, dark);
+    S.photos[id] = photoSrc(a, a.kind==="ext"?"#6b7280":"#374151", (hashStr(id)+S.photoCount)%4, dark);
     if(dark){ S.flagged[id]=true; setTimeout(()=>{cam.remove();render();darkSheet(id)},260); return; }
     delete S.flagged[id];
     setTimeout(()=>{cam.remove();const nx=nextMissing(id);if(nx)openCamera(nx);else{render();toast("All shots done ✓")}},260);
@@ -604,7 +528,7 @@ function openCamera(id){
 }
 function darkSheet(id){
   const a=ANGLES.find(x=>x.id===id);
-  const s=sheet(`<div class="row" style="gap:12px"><img src="${S.photos[id]}" style="width:110px;border-radius:12px" alt=""><div><span class="pill warn">Photo check</span><h3 style="margin:6px 0 2px">${a.name} looks too dark</h3><p class="tiny">Dark photos get fewer clicks. Turn on the lights or move the car into daylight.</p></div></div>
+  const s=sheet(`<div class="row" style="gap:12px"><img src="${S.photos[id]}" style="width:110px;border-radius:12px" alt=""><div><span class="pill warn">Photo check</span><h3 style="margin:6px 0 2px">${a.name} looks too dark</h3><p class="tiny">Dark interior photos make buyers guess the condition. Open the doors or use daylight.</p></div></div>
     <div class="row" style="margin-top:14px"><button class="btn ghost" id="keepDark" style="flex:1">Keep anyway</button><button class="btn" id="retake" style="flex:1">Retake</button></div>`);
   $("#retake",s).onclick=()=>{closeSheet();openCamera(id)};
   $("#keepDark",s).onclick=()=>{closeSheet();delete S.flagged[id];render();toast("Kept. You can retake it any time.")};
@@ -616,20 +540,6 @@ function nextMissing(after){
   if(req) return req.id;
   const any = order.find(a=>!S.photos[a.id]);
   return any? any.id : null;
-}
-
-/* ---------- typing effect ---------- */
-let typingTimer=null;
-function typeInto(el,text,done){
-  clearInterval(typingTimer);
-  el.value=""; el.classList.add("typing"); el.readOnly=true;
-  let i=0;
-  typingTimer=setInterval(()=>{
-    i+=Math.max(2,Math.round(text.length/90));
-    el.value=text.slice(0,i);
-    el.scrollTop=el.scrollHeight;
-    if(i>=text.length){clearInterval(typingTimer);el.value=text;el.classList.remove("typing");el.readOnly=false;done&&done()}
-  },22);
 }
 
 /* ---------- toast ---------- */
@@ -645,110 +555,63 @@ function toast(msg,undo){
 
 /* ---------- render & events ---------- */
 function go(view){
-  if(view==="details" && !S.car) view="vin";
-  if(["photos","desc","review"].includes(view) && !S.car && S.alertMode!=="golf") view="vin";
-  if(view==="home" && S.alertMode==="golf" && S._saved){ S.photos=S._saved.photos; S.flagged=S._saved.flagged; }
+  if(view==="home" && S.alertMode==="golf" && !S.alerts.find(a=>a.id==="golf").fixed){ S.photos={}; S.flagged={}; }
   if(view==="home") S.alertMode=null;
   S.view=view; render();
-  if(view==="desc" && !S.generated){
-    S.generated=true; const ta=$("#desc");
-    typeInto(ta,buildDescription(S.tone),()=>{S.desc=ta.value;});
-  }
 }
 function render(){
+  const sc=$(".screen"); const keep = sc && S._keepScroll ? sc.scrollTop : 0;
   app.innerHTML = V[S.view]();
   bind();
-  const arc=$("#ringArc"); if(arc){const C=2*Math.PI*56;requestAnimationFrame(()=>{arc.style.transition="stroke-dashoffset .9s ease-out";arc.style.strokeDashoffset=C*(1-quality().score/100)})}
+  if(S._keepScroll){ const n=$(".screen"); if(n) n.scrollTop=keep; S._keepScroll=false; }
 }
-function refreshQuality(){const q=$(".quality");if(q)q.outerHTML=qualityBar()}
+function rerenderKeep(){S._keepScroll=true;render()}
 
 function bind(){
   app.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
   app.querySelectorAll("[data-toast]").forEach(b=>b.onclick=()=>toast(b.dataset.toast));
+  app.querySelectorAll("[data-undo]").forEach(b=>b.onclick=()=>undoAlert(b.dataset.undo));
   app.querySelectorAll("[data-alert]").forEach(b=>b.onclick=()=>{
     const id=b.dataset.alert;
-    if(id==="bmw") return bmwSheet();
-    if(id==="clio") return clioSheet();
+    if(id==="bmw"){ S.view="bmw"; return render(); }
+    if(id==="skoda"){ S.view="skoda"; return render(); }
     if(id==="golf"){
-      S._saved={photos:S.photos,flagged:S.flagged,car:S.car,mileage:S.mileage};
-      S.alertMode="golf"; S.photos={}; S.flagged={};
+      S.alertMode="golf"; S.photos={}; S.flagged={}; S.photoCount=0; S.darkShown=false;
       ["f34l","front","left","right","rear","wheel"].forEach((k,i)=>{const a=ANGLES.find(x=>x.id===k);S.photos[k]=photoSrc(a,"#6b7280",i%4)});
-      S.view="photos"; render(); toast("6 photos so far. Interior and boot missing.");
+      S.view="photos"; render(); toast("6 photos so far. Interior missing.");
     }
   });
-  app.querySelectorAll("[data-undo]").forEach(b=>b.onclick=()=>undoAlert(b.dataset.undo));
 
-  if(S.view==="vin"){
-    const inp=$("#vin"), go_=$("#vinGo"), hint=$("#vinHint");
-    const upd=()=>{
-      const v=inp.value.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,17); if(inp.value!==v) inp.value=v; S.vin=v;
-      const e = v.length===17? validVin(v) : (/[IOQ]/.test(v)? "VINs never contain I, O or Q. Check for 1 and 0.":null);
-      inp.classList.toggle("err",!!e); hint.classList.toggle("err",!!e);
-      hint.textContent = e || `${v.length}/17 · on the windscreen, door frame or registration document (field E)`;
-      go_.disabled = !(v.length===17 && !e);
+  if(S.view==="bmw"){
+    app.querySelectorAll("[data-tick]").forEach(b=>b.onclick=()=>{const k=b.dataset.tick;S.bmw.ticks[k]=!S.bmw.ticks[k];if(!S.bmw.ticks[k])delete S.bmw.ticks[k];rerenderKeep()});
+    app.querySelectorAll("[data-radius]").forEach(b=>b.onclick=()=>{S.bmw.radius=b.dataset.radius;rerenderKeep()});
+    $("#bmwSave").onclick=()=>{
+      const r=bmwRating(); const n=Object.keys(S.bmw.ticks).length;
+      fixAlert("bmw",`${n} detail${n===1?"":"s"} added${S.bmw.radius!=="de"?", compared within "+S.bmw.radius+" km":""}. Rating now ‘${BANDS[r.band]}’ (was ‘Increased’). Price unchanged.`);
+      toast("Listing updated, price unchanged",()=>undoAlert("bmw"));
     };
-    inp.oninput=upd;
-    inp.onkeydown=e=>{if(e.key==="Enter"&&!go_.disabled)go_.click()};
-    const fill=(v)=>{inp.value="";let i=0;const t=setInterval(()=>{inp.value=v.slice(0,++i);upd();if(i>=v.length)clearInterval(t)},28)};
-    $("#demoBtn").onclick=()=>fill(DEMO_VINS[hashStr(String(Date.now()))%DEMO_VINS.length]);
-    $("#scanBtn").onclick=()=>{const box=$("#scanBox");box.innerHTML='<span class="plate">Reading…</span><div class="beam"></div>';setTimeout(()=>{const v=DEMO_VINS[0];box.innerHTML=`<span class="plate">${v}</span>`;fill(v)},1300)};
-    go_.onclick=()=>{
-      go_.disabled=true; go_.innerHTML='<span class="spinner"></span> Looking up VIN…';
-      setTimeout(()=>{
-        const car=decodeVin(S.vin);
-        if(car.unknown){
-          go_.innerHTML="Look up VIN"; go_.disabled=false;
-          $("#vinResult").innerHTML=`<div class="card"><span class="pill warn">No VIN data</span><p style="margin-top:6px;font-size:14px">This prototype knows VW (WVW), BMW (WBA), Škoda (TMB), Mercedes (WDD), Renault (VF1) and Audi (WAU). Try the demo VIN.</p></div>`;
-          return;
-        }
-        S.car=car; S.photos={}; S.flagged={}; S.desc=""; S.generated=false; S.descConfirmed=false; S.photoCount=0; S.darkShown=false;
-        go("details");
-      },1100);
-    };
-    setTimeout(()=>inp.focus({preventScroll:true}),50);
   }
-  if(S.view==="details"){
-    const m=$("#mileage"), p=$("#price"), btn=$("#detGo");
-    const num=el=>el.value.replace(/[^0-9]/g,"").slice(0,7);
-    const upd=()=>{
-      S.mileage=num(m); S.price=num(p);
-      btn.disabled=!(Number(S.mileage)>0&&Number(S.price)>0);
-      const c=S.car, pv=Number(S.price);
-      let h=`7 comparable cars: <b>${fmtEUR(c.priceLow)} – ${fmtEUR(c.priceHigh)}</b>`;
-      p.classList.remove("err");
-      if(pv>0){ if(pv>c.priceHigh*1.03){h+=` · yours is <b style="color:var(--bad)">${fmtEUR(pv-c.priceHigh)} above</b> the range`;p.classList.add("err")} else if(pv<c.priceLow*.97){h+=` · yours is below the range, you may leave money on the table`} else h+=` · <b style="color:var(--ok)">in range</b>`; }
-      $("#priceHint").innerHTML=h; refreshQuality();
+  if(S.view==="skoda"){
+    app.querySelectorAll("[data-ans]").forEach(b=>b.onclick=()=>{const [q,i]=b.dataset.ans.split(":");S.skoda.a[q]=Number(i);rerenderKeep()});
+    $("#skodaSave").onclick=()=>{
+      const n=Object.keys(S.skoda.a).length;
+      fixAlert("skoda",`${n} answer${n===1?"":"s"} added to the listing. We'll tell you if repeat questions drop.`);
+      toast("Answers added to the listing",()=>undoAlert("skoda"));
     };
-    m.oninput=upd; p.oninput=upd;
-    $("#useMid").onclick=()=>{p.value=S.car.priceMid;if(!m.value)m.value=S.car.mileageGuess;upd()};
   }
   if(S.view==="photos"){
     app.querySelectorAll("[data-shot]").forEach(b=>b.onclick=()=>openCamera(b.dataset.shot));
     const nm=$("#nextMissing"); if(nm) nm.onclick=()=>{const id=nextMissing();if(id)openCamera(id)};
     $("#autoShoot").onclick=()=>{
       let k=0;
-      ANGLES.forEach(a=>{if(!S.photos[a.id]||S.flagged[a.id]){S.photos[a.id]=photoSrc(a,a.kind==="ext"?fillFor(S.alertMode==="golf"?{color:"grey"}:S.car):"#374151",(hashStr(a.id)+k++)%4,false);delete S.flagged[a.id]}});
-      render(); toast("Demo: all 15 photos filled");
+      ANGLES.forEach(a=>{if(!S.photos[a.id]||S.flagged[a.id]){S.photos[a.id]=photoSrc(a,a.kind==="ext"?"#6b7280":"#374151",(hashStr(a.id)+k++)%4,false);delete S.flagged[a.id]}});
+      render(); toast("Demo: all photos filled");
     };
     const gd=$("#golfDone"); if(gd) gd.onclick=()=>{
       const n=Object.keys(S.photos).length;
-      const sv=S._saved; S.photos=sv.photos; S.flagged=sv.flagged; S.alertMode=null;
-      fixAlert("golf",`Photos updated: ${n} photos incl. interior.`); S.view="home"; render();
+      S.alertMode=null;
+      fixAlert("golf",`Photos updated: ${n} photos including the interior.`);
       toast("Golf updated with "+n+" photos",()=>undoAlert("golf"));
-    };
-  }
-  if(S.view==="desc"){
-    const ta=$("#desc"), cb=$("#confirm"), btn=$("#descGo");
-    const upd=()=>{S.desc=ta.value;S.descConfirmed=cb.checked;btn.disabled=!(cb.checked&&ta.value.trim().length>120);refreshQuality()};
-    ta.oninput=()=>{if(S.descConfirmed){cb.checked=false}upd()};
-    cb.onchange=upd;
-    app.querySelectorAll("[data-tone]").forEach(b=>b.onclick=()=>{S.tone=b.dataset.tone;app.querySelectorAll("[data-tone]").forEach(x=>x.classList.toggle("on",x===b));cb.checked=false;upd();typeInto(ta,buildDescription(S.tone),upd)});
-    $("#regen").onclick=()=>{cb.checked=false;upd();typeInto(ta,buildDescription(S.tone),upd)};
-  }
-  if(S.view==="review"){
-    $("#publish").onclick=()=>{
-      const b=$("#publish"); b.disabled=true; b.innerHTML='<span class="spinner"></span> Publishing…';
-      setTimeout(()=>{S.published=true;go("done")},900);
     };
   }
 }

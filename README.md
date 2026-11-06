@@ -1,11 +1,12 @@
 # AutoMarketPro listing health: clickable prototype
 
-Clickable prototype of the dealer listing flow from a product case study (fictional company "AutoMarketPro"):
+Clickable prototype of the weekly car check from a product case study (fictional company "AutoMarketPro").
 
-1. Enter the VIN: specs fill themselves
-2. Photo guide: 15 angles with shot guidance and a quality check
-3. AI description drafted from specs and photos; the dealer edits and confirms
-4. Publish at the quality bar
-5. Weekly: cars that need attention, each with a reason, a one-click fix and undo
+Creating a listing is already automated (VIN decoding, factory equipment, AI descriptions, DMS feeds via API). This prototype covers what the data can't know, **after publishing**, for every listing channel:
+
+1. **Weekly car check:** at most 3 cars, sorted by price × days online (a proxy for capital tied up), each with the one gap that matters
+2. **What the rating can't see:** the dealer adds warranty, condition and extras in one tap and sets the comparison radius. The price rating is explained with the comparison cars. No price-cut suggestion.
+3. **Answer once:** questions buyers keep asking (accident-free? timing belt? service book?) answered in the listing
+4. **Missing photos:** guided shots for exactly what's missing
 
 All data is illustrative. Single file, no dependencies: open `index.html`.
